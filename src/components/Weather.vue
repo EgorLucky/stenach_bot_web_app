@@ -6,14 +6,16 @@
         isSearching: false,
         isSettingLocation: false,
         locationSearchResults: [],
-        locationsNotFound: false
-
+        locationsNotFound: false,
+        userLocation: null
       }
     },
     async mounted(){
       const accessToken = localStorage.getItem('access_token');
       if(!accessToken)
         await this.getToken()
+
+        await this.getUserLocation();
     },
     methods: {
       async getToken() {
@@ -77,7 +79,8 @@
           });
 
           if (response.status === 200) {
-              
+              alert('ееееу! локация сохранена!')
+              this.userLocation = await response.json();
           }
           else {
 
@@ -88,17 +91,34 @@
         }
 
         this.isSettingLocation = false;
+      },
+      async getUserLocation() {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || ''}/weather/getLocation`, {
+            headers: {
+              authorization: `telegramWebAppData ${localStorage.getItem('access_token')}`
+            }
+          });
+        if(response.status === 200) {
+          this.userLocation = await response.json();
+        }
       }
     }, 
 }
 </script>
 
 <template>
-  ёёёёёууууу ввади локацию!
+  <div v-if="userLocation">
+    Текущая локация: <b>{{ userLocation.name }}</b>
+  </div>
+  <div v-else>
+    локация не выбрана!
+  </div>
+  ёёёёёууууу ввади {{!userLocation? "новую": ""}} локацию!
   <br>
   <input 
     type="text" 
-    v-model="searchText">
+    v-model="searchText"
+    @keyup.enter=handleSearchClick>
   <button 
     @click=handleSearchClick
     style="width: 100%;">search</button>
