@@ -70,6 +70,7 @@
           this.isSettingLocation = true;
 
           const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || ''}/weather/setLocation?placeId=${placeId}`, {
+            method: 'post',
             headers: {
               authorization: `telegramWebAppData ${localStorage.getItem('access_token')}`
             }
