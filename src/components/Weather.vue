@@ -5,9 +5,11 @@
         searchText: "",
         isSearching: false,
         isSettingLocation: false,
+        settingLocationId: null,
         locationSearchResults: [],
         locationsNotFound: false,
-        userLocation: null
+        userLocation: null,
+        unauthorized: false,
       }
     },
     async mounted(){
@@ -20,6 +22,11 @@
     methods: {
       async getToken() {
         const data = Telegram.WebApp.initData;
+
+        if (!data) {
+          this.unauthorized = true;
+        }
+
         const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || ''}/bot/getToken`, {
           method: "post",
           body: data,
@@ -70,6 +77,7 @@
           return;
         try {
           this.isSettingLocation = true;
+          this.settingLocationId = placeId;
 
           const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || ''}/weather/setLocation?placeId=${placeId}`, {
             method: 'post',
@@ -91,6 +99,7 @@
         }
 
         this.isSettingLocation = false;
+        this.settingLocationId = null;
       },
       async getUserLocation() {
         const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || ''}/weather/getLocation`, {
@@ -107,31 +116,45 @@
 </script>
 
 <template>
-  <div v-if="userLocation">
-    Текущая локация: <b>{{ userLocation.name }}</b>
-  </div>
-  <div v-else>
-    локация не выбрана!
-  </div>
-  ёёёёёууууу ввади {{!userLocation? "новую": ""}} локацию!
-  <br>
-  <input 
-    type="text" 
-    v-model="searchText"
-    @keyup.enter=handleSearchClick>
-  <button 
-    @click=handleSearchClick
-    style="width: 100%;">search</button>
-  <div>
-    <div class="card"
-      v-for="location in locationSearchResults" 
-      :key="location.placeId"
-      @click="() => handleLocationClick(location.placeId)">
-      {{ location.displayName }}
+  <div v-if="!unauthorized">
+    <div v-if="userLocation">
+      Текущая локация: <b>{{ userLocation.name }}</b>
+    </div>
+    <div v-else>
+      локация не выбрана!
+    </div>
+    ёёёёёууууу ввади {{!userLocation? "новую": ""}} локацию!
+    <br>
+    <input
+      :disabled="isSearching"
+      type="text" 
+      v-model="searchText"
+      @keyup.enter=handleSearchClick>
+    <button 
+      :disabled="isSearching"
+      @click=handleSearchClick
+      style="width: 100%;">
+      <span v-if="isSearching" class="loader"></span>
+      <span v-else>search</span>
+    </button>
+    <div>
+      <div class="card"
+        v-for="location in locationSearchResults" 
+        :key="location.placeId"
+        @click="() => handleLocationClick(location.placeId)">
+        {{ location.displayName }}
+        <template v-if="isSettingLocation && settingLocationId === location.placeId">
+          <br>
+          <span class="loader"></span>
+        </template>
+      </div>
+    </div>
+    <div v-if="locationsNotFound">
+      Ничего не нашел....
     </div>
   </div>
-  <div v-if="locationsNotFound">
-    Ничего не нашел....
+  <div v-else>
+    nnnooot authorized
   </div>
 </template>
 
